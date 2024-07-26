@@ -1,0 +1,149 @@
+zabbix_export:
+  version: '7.0'
+  template_groups:
+    - uuid: 9e4e0f84850745289827372ccd6e315a
+      name: 'root-Windows Servers'
+  templates:
+    - uuid: 8ea6a68b71a9493aa78cb5291b7affa3
+      template: root-WinUpdates
+      name: root-WinUpdates
+      groups:
+        - name: 'root-Windows Servers'
+      items:
+        - uuid: 5b866fa063c94310a41c57f1c1f2a1a0
+          name: 'Download PS Script'
+          type: ZABBIX_ACTIVE
+          key: 'system.run[powershell.exe -NoProfile -ExecutionPolicy Bypass -command Invoke-WebRequest -Uri https://raw.githubusercontent.com/root-service/zabbix-templates/winupdates/master/check_win_updates.ps1 -OutFile (New-Item -Path "c:\programdata\ZabbixAgent\scripts\check_win_updates.ps1" -Force)]'
+          delay: 1d
+          history: 90d
+          trends: '0'
+          value_type: TEXT
+          tags:
+            - tag: Application
+              value: Winupdates
+        - uuid: e0fdbbb63cf94159851dc7d74b3474f3
+          name: WinUpdate-Check
+          type: ZABBIX_ACTIVE
+          key: 'system.run[powershell.exe -NoProfile -ExecutionPolicy Bypass -file "C:\ProgramData\ZabbixAgent\scripts\check_win_updates.ps1",nowait]'
+          delay: 15m
+          history: 30d
+          trends: '0'
+          value_type: TEXT
+          tags:
+            - tag: Application
+              value: Winupdates
+        - uuid: 0a734c892c644dc99637c5b41ccc7ad9
+          name: 'Critical Updates'
+          type: TRAP
+          key: Winupdates.Critical
+          delay: '0'
+          history: 30d
+          trends: 30d
+          value_type: FLOAT
+          description: 'Number of Critical Windows Updates Available'
+          tags:
+            - tag: Application
+              value: Winupdates-Panel
+          triggers:
+            - uuid: c6a26e6a846e482a8ffd6266e737c8ba
+              expression: 'last(/root-WinUpdates/Winupdates.Critical)>0 and last(/root-WinUpdates/Winupdates.Critical)<3'
+              name: 'There are critical updates for {HOST.NAME}'
+              priority: HIGH
+            - uuid: b5c12b215f8c44dd8cc07d8a41b8ee3a
+              expression: last(/root-WinUpdates/Winupdates.Critical)>3
+              name: 'There are more than 3 critical updates for {HOST.NAME}'
+              priority: HIGH
+        - uuid: 549583c196e844809c7fd54b74164c3a
+          name: 'Hidden Updates'
+          type: TRAP
+          key: Winupdates.Hidden
+          delay: '0'
+          history: 30d
+          trends: 30d
+          description: 'Number of Hidden Windows Updates'
+          tags:
+            - tag: Application
+              value: Winupdates-Panel
+          triggers:
+            - uuid: 93a6265c9637443c84a46a3aed6d8820
+              expression: last(/root-WinUpdates/Winupdates.Hidden)>0
+              name: 'There are hidden updates for {HOST.NAME}'
+              priority: INFO
+              manual_close: 'YES'
+        - uuid: b52e325e4675498fb40bb15f62f39e78
+          name: 'Last Search Date'
+          type: TRAP
+          key: Winupdates.LastSearchDate
+          delay: '0'
+          history: 30d
+          trends: '0'
+          value_type: TEXT
+          description: 'Date last Windows updates were searched'
+          tags:
+            - tag: Application
+              value: Winupdates-Panel
+        - uuid: a692ec8ff72044cb8ef1c672a59f7aa6
+          name: 'Last Update Date'
+          type: TRAP
+          key: Winupdates.LastUpdateDate
+          delay: '0'
+          history: 30d
+          trends: '0'
+          value_type: TEXT
+          description: 'Date last Windows updates were applied'
+          tags:
+            - tag: Application
+              value: Winupdates-Panel
+        - uuid: 0f9c1f440cea4245bc9dc994f74f1bc0
+          name: 'Optional Updates'
+          type: TRAP
+          key: Winupdates.Optional
+          delay: '0'
+          history: 30d
+          trends: 30d
+          description: 'Number of Optional Windows Updates Available'
+          tags:
+            - tag: Application
+              value: Winupdates-Panel
+          triggers:
+            - uuid: 9da058b2cb4d465fa7b49180b47e374f
+              expression: last(/root-WinUpdates/Winupdates.Optional)>5
+              name: 'There are a large number of optional updates for {HOST.NAME}'
+              priority: WARNING
+            - uuid: cf3b2a03881a416098a09fc884a94b02
+              expression: last(/root-WinUpdates/Winupdates.Optional)>0
+              name: 'There are optional updates for {HOST.NAME}'
+              priority: INFO
+        - uuid: 949c23798c6243ff81c6fe59bf2df1e7
+          name: 'Reboot Required'
+          type: TRAP
+          key: Winupdates.Reboot
+          delay: '0'
+          history: 30d
+          description: 'Number of Critical Windows Updates Available'
+          tags:
+            - tag: Application
+              value: Winupdates-Panel
+          triggers:
+            - uuid: 3777d1809e9043cfa0002fa292552e00
+              expression: last(/root-WinUpdates/Winupdates.Reboot)=1
+              name: 'Reboot required for {HOST.NAME}'
+              priority: INFO
+        - uuid: cc3cb1cb03c04e6b893df2798f247944
+          name: 'Installing Updates'
+          type: TRAP
+          key: Winupdates.Updating
+          delay: '0'
+          history: 30d
+          trends: 30d
+          status: DISABLED
+          description: 'Windows is installing updates'
+          tags:
+            - tag: Application
+              value: Winupdates-Panel
+          triggers:
+            - uuid: aa32e5c2d5d9403fa2f1b078fdd3b1e5
+              expression: last(/root-WinUpdates/Winupdates.Updating)=1
+              name: '{HOST.NAME} is running updates'
+              priority: INFO
+              manual_close: 'YES'
