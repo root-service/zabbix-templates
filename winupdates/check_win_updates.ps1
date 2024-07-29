@@ -16,6 +16,7 @@ $zbxValueTable = @{
 	'Winupdates.LastUpdateDate' = ''
 	'Winupdates.Updating'       = 0	
 	'Winupdates.LastSearchDate' = ''
+	'Winupdates.UpdateNames'    = ''
 }
 $windowsUpdateObject = New-Object -ComObject Microsoft.Update.AutoUpdate
 
@@ -34,8 +35,7 @@ else {
 $updateSession = new-object -com "Microsoft.Update.Session"
 $updates = $updateSession.CreateupdateSearcher().Search(("IsInstalled=0 and Type='Software'")).Updates
 
-$criticalTitles = "";
-$countCritical = 0;
+$countCritical = 0; a
 $countOptional = 0;
 $countHidden = 0;
 
@@ -46,8 +46,10 @@ foreach ($update in $updates) {
 	}
 
 	if ($update.AutoSelectOnWebSites) {
-		$criticalTitles += $update.Title + " `n"
-		$countCritical++
+		if ($update.Categories[0].Name -notlike '*Definition*') {
+			$countCritical++
+			$zbxValueTable['Winupdates.UpdateNames'] += $update.Title + " `n"
+		}
 	}
 
 	else {
@@ -62,6 +64,7 @@ if (($countCritical + $countOptional) -gt 0) {
 	Write-Host "`t There are $($countCritical) critical updates available" -ForeGroundColor "Yellow"
 	Write-Host "`t There are $($countOptional) optional updates available" -ForeGroundColor "Yellow"
 	Write-Host "`t There are $($countHidden) hidden updates available" -ForeGroundColor "Yellow"
+	$zbxValueTable['Winupdates.UpdateNames'] += $update.Title + " `n"
 }	
 
 foreach ($key in $zbxValueTable.Keys.GetEnumerator()) {
